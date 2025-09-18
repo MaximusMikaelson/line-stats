@@ -1,0 +1,38 @@
+name: Update Code Stats
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"  # раз в неделю по понедельникам
+  workflow_dispatch:      # возможность запустить вручную
+
+jobs:
+  update-stats:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run stats script
+        run: python count_lines.py
+
+      - name: Update README
+        run: |
+          # заменим старую статистику
+          sed -i '/## 📊 Статистика по коду/,$d' README.md
+          cat stats.md >> README.md
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md stats.md
+          git commit -m "Update code stats" || echo "No changes"
+          git push
